@@ -111,6 +111,13 @@ def get_all_texts(from_file, text_names):
             res[text_name] = file.read()
     return res
 
+def get_group_frequencies(from_file, texts):
+    """ Returns a dictionary for a group of texts """
+    res = {}
+    for text_name in texts:
+        res[text_name] = get_word_frequency(texts[text_name])
+    return res
+
 
 """ HEATMAP """
 
