@@ -1,3 +1,9 @@
+# My code for testing
+testing/
+
+# My texts
+texts/private/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
