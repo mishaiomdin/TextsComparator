@@ -21,7 +21,25 @@ def get_text(from_file, text_name):
         text = file.read()
     return text
 
-def get_word_frequency(text_file, non_alphabet_re=non_alphabet_re2, lower=True):
+
+def get_word_frequency(text, non_alphabet_re=non_alphabet_re2, lower=True):
+    """ Returns table of word frequencies in a text """
+    words = text_to_words(text, non_alphabet_re=non_alphabet_re)
+    dictionary = {}
+    for word in words:
+        if word:
+            if word not in dictionary:
+                dictionary[word] = 0
+            dictionary[word] += 1
+    df = pd.DataFrame.from_dict(dictionary, orient='index')
+    df.reset_index(inplace=True)
+    df.rename(columns={0: 'count', 'index': 'word'}, inplace=True)
+    df.sort_values('count', ascending=False, inplace=True)
+    df.reset_index(drop=True, inplace=True)
+    return df
+
+
+def get_word_frequency_from_file(text_file, non_alphabet_re=non_alphabet_re2, lower=True):
     """ Returns table of word frequencies in a text """
     with open(text_file) as file:
         text = file.read()
@@ -90,20 +108,20 @@ def get_ngrams_frequency(text, n):
 
 """ WORKING WITH A GROUP OF TEXTS """
 
-def save_all(from_file, to_file, text_names):
+def save_group(from_file, to_file, text_names):
     """ Calculates frequencies for each; saves to csv """
     for text_name in text_names:
-        freq = get_word_frequency(from_file + text_name + '.txt')
+        freq = get_word_frequency_from_file(from_file + text_name + '.txt')
         freq.to_csv(to_file + text_name + '.csv', index=False)
 
-def get_all(from_file, text_names):
+def get_group(from_file, text_names):
     """ Returns a dictionary for all word frequencies of a group of texts """
     res = {}
     for text_name in text_names:
         res[text_name] = pd.read_csv(from_file + text_name + '.csv')
     return res
 
-def get_all_texts(from_file, text_names):
+def get_group_texts(from_file, text_names):
     """ Returns a dictionary for a group of texts """
     res = {}
     for text_name in text_names:
