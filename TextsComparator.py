@@ -16,8 +16,8 @@ non_alphabet_re2 = r"""[^a-zA-Z\u00C0-\u024F\u0400-\u04FF\-\'’ ]"""
 
 """ WORKING WITH ONE TEXT """
 
-def get_text(from_file, lang):
-    with open(from_file + lang + '.txt') as file:
+def get_text(from_file, text_name):
+    with open(from_file + text_name + '.txt') as file:
         text = file.read()
     return text
 
@@ -90,25 +90,25 @@ def get_ngrams_frequency(text, n):
 
 """ WORKING WITH A GROUP OF TEXTS """
 
-def save_all(from_file, to_file, langs):
+def save_all(from_file, to_file, text_names):
     """ Calculates frequencies for each; saves to csv """
-    for lang in langs:
-        freq = get_word_frequency(from_file + lang + '.txt')
-        freq.to_csv(to_file + lang + '.csv', index=False)
+    for text_name in text_names:
+        freq = get_word_frequency(from_file + text_name + '.txt')
+        freq.to_csv(to_file + text_name + '.csv', index=False)
 
-def get_all(from_file, langs):
-    """ Returns a dictionary for all word frequencies of languages """
+def get_all(from_file, text_names):
+    """ Returns a dictionary for all word frequencies of a group of texts """
     res = {}
-    for lang in langs:
-        res[lang] = pd.read_csv(from_file + lang + '.csv')
+    for text_name in text_names:
+        res[text_name] = pd.read_csv(from_file + text_name + '.csv')
     return res
 
-def get_all_texts(from_file, langs):
-    """ Returns a dictionary for all texts of languages """
+def get_all_texts(from_file, text_names):
+    """ Returns a dictionary for a group of texts """
     res = {}
-    for lang in langs:
-        with open(from_file + lang + '.txt') as file:
-            res[lang] = file.read()
+    for text_name in text_names:
+        with open(from_file + text_name + '.txt') as file:
+            res[text_name] = file.read()
     return res
 
 
@@ -131,114 +131,114 @@ def heatmap(df, save_to, triangle=True, black=True, labels=False, annot=True, fm
     plt.savefig(save_to)
     plt.show()
 
-""" COMPARE SEVERAL / TWO LANGUAGES """
+""" COMPARE SEVERAL TEXTS """
 
-def compare_frequent(freq, *langs, limit=10):
-    """ Returns an UNMATCHED table of most frequent words in any number of languages """
+def compare_frequent(freq, *text_names, limit=10):
+    """ Returns an UNMATCHED table of most frequent words in any number of text_nameuages """
     return pd.DataFrame({
-        lang: freq[lang]['word'] for lang in langs
+        text_name: freq[text_name]['word'] for text_name in text_names
     }).head(limit)
 
-def compare_ngrams(n, texts, *langs, limit=10):
-    """ Returns an UNMATCHED table of most frequent ngrams in any number of languages """
+def compare_ngrams(n, texts, *text_names, limit=10):
+    """ Returns an UNMATCHED table of most frequent ngrams in any number of text_nameuages """
     return pd.concat(
-        [get_ngrams_frequency(texts[lang], n) for lang in langs]
+        [get_ngrams_frequency(texts[text_name], n) for text_name in text_names]
     ).head(limit)
 
-def check_different_langs(lang1, lang2):
-    """ checks that two different languages are given """
-    if lang1 == lang2:
-        raise Exception("Can't compare a language with itself")
+def check_different_text_names(text_name1, text_name2):
+    """ checks that two different text_nameuages are given """
+    if text_name1 == text_name2:
+        raise Exception("Can't compare a text_nameuage with itself")
 
-def calculate_intersection(freq, lang1, lang2):
-    """ calculates in_lang1 and in_lang2 if not yet; returns set of intersected words """
-    check_different_langs(lang1, lang2)
-    intersection = set(freq[lang1]['word']).intersection(set(freq[lang2]['word']))
-    if f"in_{lang2}" not in freq[lang1].columns:
-        freq[lang1][f'in_{lang2}'] = freq[lang1]['word'].apply(lambda x: x in intersection)
-    if f"in_{lang1}" not in freq[lang2].columns:
-        freq[lang2][f'in_{lang1}'] = freq[lang2]['word'].apply(lambda x: x in intersection)
+def calculate_intersection(freq, text_name1, text_name2):
+    """ calculates in_text_name1 and in_text_name2 if not yet; returns set of intersected words """
+    check_different_text_names(text_name1, text_name2)
+    intersection = set(freq[text_name1]['word']).intersection(set(freq[text_name2]['word']))
+    if f"in_{text_name2}" not in freq[text_name1].columns:
+        freq[text_name1][f'in_{text_name2}'] = freq[text_name1]['word'].apply(lambda x: x in intersection)
+    if f"in_{text_name1}" not in freq[text_name2].columns:
+        freq[text_name2][f'in_{text_name1}'] = freq[text_name2]['word'].apply(lambda x: x in intersection)
     return intersection
 
-def get_specifics(freq, lang1, lang2):
-    """ returns words specific to lang1, lang2"""
-    check_different_langs(lang1, lang2)
-    if f"in_{lang2}" not in freq[lang1].columns or f"in_{lang1}" not in freq[lang2].columns:
-        calculate_intersection(freq, lang1, lang2)
-    return freq[lang1][~freq[lang1][f'in_{lang2}']].reset_index(), freq[lang2][~freq[lang2][f'in_{lang1}']].reset_index()
+def get_specifics(freq, text_name1, text_name2):
+    """ returns words specific to text_name1, text_name2"""
+    check_different_text_names(text_name1, text_name2)
+    if f"in_{text_name2}" not in freq[text_name1].columns or f"in_{text_name1}" not in freq[text_name2].columns:
+        calculate_intersection(freq, text_name1, text_name2)
+    return freq[text_name1][~freq[text_name1][f'in_{text_name2}']].reset_index(), freq[text_name2][~freq[text_name2][f'in_{text_name1}']].reset_index()
 
-def get_specifics_three(freq, lang1, lang2, lang3):
-    """ returns words specific to lang1, lang2, lang3"""
-    check_different_langs(lang1, lang2)
-    check_different_langs(lang2, lang3)
-    check_different_langs(lang1, lang3)
-    if f"in_{lang2}" not in freq[lang1].columns or f"in_{lang3}" not in freq[lang1].columns:
-        calculate_intersection(freq, lang1, lang2)
-        calculate_intersection(freq, lang1, lang3)
-        calculate_intersection(freq, lang2, lang3)
-    return freq[lang1][(~freq[lang1][f'in_{lang2}']) & (~freq[lang1][f'in_{lang3}'])].reset_index(),\
-    freq[lang2][(~freq[lang2][f'in_{lang1}']) & (~freq[lang2][f'in_{lang3}'])].reset_index(),\
-    freq[lang3][(~freq[lang3][f'in_{lang1}']) & (~freq[lang3][f'in_{lang2}'])].reset_index()
+def get_specifics_three(freq, text_name1, text_name2, text_name3):
+    """ returns words specific to text_name1, text_name2, text_name3"""
+    check_different_text_names(text_name1, text_name2)
+    check_different_text_names(text_name2, text_name3)
+    check_different_text_names(text_name1, text_name3)
+    if f"in_{text_name2}" not in freq[text_name1].columns or f"in_{text_name3}" not in freq[text_name1].columns:
+        calculate_intersection(freq, text_name1, text_name2)
+        calculate_intersection(freq, text_name1, text_name3)
+        calculate_intersection(freq, text_name2, text_name3)
+    return freq[text_name1][(~freq[text_name1][f'in_{text_name2}']) & (~freq[text_name1][f'in_{text_name3}'])].reset_index(),\
+    freq[text_name2][(~freq[text_name2][f'in_{text_name1}']) & (~freq[text_name2][f'in_{text_name3}'])].reset_index(),\
+    freq[text_name3][(~freq[text_name3][f'in_{text_name1}']) & (~freq[text_name3][f'in_{text_name2}'])].reset_index()
 
-def get_specifics_df(freq, lang1, lang2):
-    """ returns words specific to lang1, lang2 in one table, NOT MATCHED"""
-    check_different_langs(lang1, lang2)
-    specific1, specific2 = get_specifics(freq, lang1, lang2)
+def get_specifics_df(freq, text_name1, text_name2):
+    """ returns words specific to text_name1, text_name2 in one table, NOT MATCHED"""
+    check_different_text_names(text_name1, text_name2)
+    specific1, specific2 = get_specifics(freq, text_name1, text_name2)
     df = pd.DataFrame({
-        f'{lang1}_specific': specific1['word'],
-        f'{lang1}_count': specific1['count'],
-        f'{lang2}_specific': specific2['word'],
-        f'{lang2}_count': specific2['count']
+        f'{text_name1}_specific': specific1['word'],
+        f'{text_name1}_count': specific1['count'],
+        f'{text_name2}_specific': specific2['word'],
+        f'{text_name2}_count': specific2['count']
     })
     return df
 
-def get_specifics_df_three(freq, lang1, lang2, lang3):
-    """ returns words specific to lang1, lang2, lang3 in one table, NOT MATCHED"""
-    check_different_langs(lang1, lang2)
-    specific1, specific2, specific3 = get_specifics_three(freq, lang1, lang2, lang3)
+def get_specifics_df_three(freq, text_name1, text_name2, text_name3):
+    """ returns words specific to text_name1, text_name2, text_name3 in one table, NOT MATCHED"""
+    check_different_text_names(text_name1, text_name2)
+    specific1, specific2, specific3 = get_specifics_three(freq, text_name1, text_name2, text_name3)
     df = pd.DataFrame({
-        f'{lang1}_specific': specific1['word'],
-        f'{lang1}_count': specific1['count'],
-        f'{lang2}_specific': specific2['word'],
-        f'{lang2}_count': specific2['count'],
-        f'{lang3}_specific': specific3['word'],
-        f'{lang3}_count': specific3['count']
+        f'{text_name1}_specific': specific1['word'],
+        f'{text_name1}_count': specific1['count'],
+        f'{text_name2}_specific': specific2['word'],
+        f'{text_name2}_count': specific2['count'],
+        f'{text_name3}_specific': specific3['word'],
+        f'{text_name3}_count': specific3['count']
     })
     return df
 
-def get_intersection_df(freq, lang1, lang2):
-    """ returns table of mutual words between lang1 and lang2, sorted by sum of frequencies"""
-    check_different_langs(lang1, lang2)
-    df = freq[lang1].merge(freq[lang2], on='word', how='inner', suffixes=(f'_{lang1}', f'_{lang2}'))
-    df['sum_count'] = df[f'count_{lang1}'] + df[f'count_{lang2}']
+def get_intersection_df(freq, text_name1, text_name2):
+    """ returns table of mutual words between text_name1 and text_name2, sorted by sum of frequencies"""
+    check_different_text_names(text_name1, text_name2)
+    df = freq[text_name1].merge(freq[text_name2], on='word', how='inner', suffixes=(f'_{text_name1}', f'_{text_name2}'))
+    df['sum_count'] = df[f'count_{text_name1}'] + df[f'count_{text_name2}']
     df.sort_values('sum_count', inplace=True, ascending=False)
     df.reset_index(drop=True, inplace=True)
-    return df[['word', f'count_{lang1}', f'count_{lang2}', 'sum_count']]
+    return df[['word', f'count_{text_name1}', f'count_{text_name2}', 'sum_count']]
 
-""" IOU METRIC FOR VOCABULARY ON A GROUP OF LANGUAGES """
+""" IOU METRIC FOR VOCABULARY ON A GROUP OF text_nameUAGES """
 
-def get_iou(freq, langs, round=None, percentage=False, also_intersection=False):
-    """ Calculates IOU for words of given languages """
-    iou = {lang:{} for lang in langs}
-    intersection = {lang:{} for lang in langs}
-    for i1 in tqdm(range(len(langs))):
-        lang1 = langs[i1]
+def get_iou(freq, text_names, round=None, percentage=False, also_intersection=False):
+    """ Calculates IOU for words of given text_nameuages """
+    iou = {text_name:{} for text_name in text_names}
+    intersection = {text_name:{} for text_name in text_names}
+    for i1 in tqdm(range(len(text_names))):
+        text_name1 = text_names[i1]
         
         # with itself
-        iou[lang1][lang1] = 1
-        intersection[lang1][lang1] = len(freq[lang1])
+        iou[text_name1][text_name1] = 1
+        intersection[text_name1][text_name1] = len(freq[text_name1])
 
         # with others
-        for i2 in range(i1 + 1, len(langs)):
-            lang2 = langs[i2]
-            intersection[lang1][lang2] = freq[lang1]['word'].apply(
-                lambda x: x in freq[lang2]['word'].values).sum()
-            cur_union = len(freq[lang1]) + len(freq[lang2]) - intersection[lang1][lang2]
-            iou[lang1][lang2] = intersection[lang1][lang2] / cur_union
+        for i2 in range(i1 + 1, len(text_names)):
+            text_name2 = text_names[i2]
+            intersection[text_name1][text_name2] = freq[text_name1]['word'].apply(
+                lambda x: x in freq[text_name2]['word'].values).sum()
+            cur_union = len(freq[text_name1]) + len(freq[text_name2]) - intersection[text_name1][text_name2]
+            iou[text_name1][text_name2] = intersection[text_name1][text_name2] / cur_union
             
             # other way around
-            iou[lang2][lang1] = iou[lang1][lang2]
-            intersection[lang2][lang1] = intersection[lang1][lang2]
+            iou[text_name2][text_name1] = iou[text_name1][text_name2]
+            intersection[text_name2][text_name1] = intersection[text_name1][text_name2]
             
     df_iou = pd.DataFrame(iou) * (100 if percentage else 1)
     df_intersection = pd.DataFrame(intersection)
@@ -248,9 +248,9 @@ def get_iou(freq, langs, round=None, percentage=False, also_intersection=False):
         return df_iou, df_intersection
     return df_iou
 
-def iou_heatmap(freq, langs, save_to, round=None, percentage=True, triangle=True, black=True, labels=False, annot=True, fmt='.0f'):
+def iou_heatmap(freq, text_names, save_to, round=None, percentage=True, triangle=True, black=True, labels=False, annot=True, fmt='.0f'):
     """ saves and shows a heatmap for IOU, triangle by default """
-    df_iou = get_iou(freq, langs, round, percentage)
+    df_iou = get_iou(freq, text_names, round, percentage)
     heatmap(df_iou, save_to, triangle, black, labels, annot, fmt)
 
 
@@ -283,9 +283,9 @@ def longest_ngrams_text(text1, text2, with_tqdm=True, upto=1000):
             return list(last_ngrams)
     return list(last_ngrams)
 
-def longest_ngrams(from_file, lang1, lang2, with_tqdm=True):
-    text1 = get_text(from_file, lang1)
-    text2 = get_text(from_file, lang2)
+def longest_ngrams(from_file, text_name1, text_name2, with_tqdm=True):
+    text1 = get_text(from_file, text_name1)
+    text2 = get_text(from_file, text_name2)
     return longest_ngrams_text(text1=text1, text2=text2, with_tqdm=with_tqdm)
 
 def one_longest_ngram_text(text1, text2, with_tqdm=True):
@@ -295,35 +295,35 @@ def one_longest_ngram_text(text1, text2, with_tqdm=True):
         return res[0]
     return ''
 
-def one_longest_ngram(from_file, lang1, lang2, with_tqdm=True):
-    text1 = get_text(from_file, lang1)
-    text2 = get_text(from_file, lang2)
+def one_longest_ngram(from_file, text_name1, text_name2, with_tqdm=True):
+    text1 = get_text(from_file, text_name1)
+    text2 = get_text(from_file, text_name2)
     return one_longest_ngram_text(text1=text1, text2=text2, with_tqdm=with_tqdm)
 
 def words_count(phrase):
     """ Counts words in a phrase """
     return len(phrase.split())
 
-def longest_ngram_table(from_file, langs, all=True, for_same='', also_length=False):
+def longest_ngram_table(from_file, text_names, all=True, for_same='', also_length=False):
     """ if all=True, each cell is a list of ngrams or []; otherwise one or '' """
-    longest_ngram = {lang:{} for lang in langs}
-    for i1 in tqdm(range(len(langs))):
-        lang1 = langs[i1]
+    longest_ngram = {text_name:{} for text_name in text_names}
+    for i1 in tqdm(range(len(text_names))):
+        text_name1 = text_names[i1]
         
         # with itself
-        longest_ngram[lang1][lang1] = for_same
+        longest_ngram[text_name1][text_name1] = for_same
 
         # with others
-        for i2 in range(i1 + 1, len(langs)):
-            lang2 = langs[i2]
+        for i2 in range(i1 + 1, len(text_names)):
+            text_name2 = text_names[i2]
             if all:
-                ngrams = longest_ngrams(from_file, lang1, lang2, with_tqdm=False)
+                ngrams = longest_ngrams(from_file, text_name1, text_name2, with_tqdm=False)
             else:
-                ngrams = one_longest_ngram(from_file, lang1, lang2, with_tqdm=False)
-            longest_ngram[lang1][lang2] = ngrams
+                ngrams = one_longest_ngram(from_file, text_name1, text_name2, with_tqdm=False)
+            longest_ngram[text_name1][text_name2] = ngrams
             
             # other way around
-            longest_ngram[lang2][lang1] = ngrams
+            longest_ngram[text_name2][text_name1] = ngrams
     df_ngrams = pd.DataFrame(longest_ngram)
     if also_length:
         if all:
