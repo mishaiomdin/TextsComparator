@@ -21,33 +21,8 @@ def get_text(from_file, lang):
         text = file.read()
     return text
 
-def get_frequency_old(text_file, non_alphabet_re=non_alphabet_re1, lower=True):
+def get_word_frequency(text_file, non_alphabet_re=non_alphabet_re2, lower=True):
     """ Returns table of word frequencies in a text """
-    with open(text_file) as file:
-        text = file.read()
-    
-    dictionary = {}
-    
-    for _line in text.split('\n'):
-        line = re.sub(non_alphabet_re, '', _line)
-        if lower:
-            line = line.lower()
-        for word in line.split(' '):
-            if word:
-                if word not in dictionary:
-                    dictionary[word] = 0
-                dictionary[word] += 1
-    df = pd.DataFrame.from_dict(dictionary, orient='index')
-    df.reset_index(inplace=True)
-    df.rename(columns={0: 'count', 'index': 'word'}, inplace=True)
-    df.sort_values('count', ascending=False, inplace=True)
-    df = df[df['word'] != '-']
-    df.reset_index(drop=True, inplace=True)
-    df['hapax_legomenon'] = (df['count'] == 1)
-    df['length'] = df['word'].str.len()
-    return df
-
-def get_frequency(text_file, non_alphabet_re=non_alphabet_re2, lower=True):
     with open(text_file) as file:
         text = file.read()
     words = text_to_words(text, non_alphabet_re=non_alphabet_re)
@@ -65,6 +40,7 @@ def get_frequency(text_file, non_alphabet_re=non_alphabet_re2, lower=True):
     return df
 
 def get_char_frequency(text_file, non_alphabet_re=non_alphabet_re2, lower=True):
+    """ Returns table of character frequencies in a text """
     with open(text_file) as file:
         text = file.read()
     chars = text_to_chars(text, non_alphabet_re=non_alphabet_re)
@@ -99,7 +75,7 @@ def clean_text(text, to_delete=None, non_alphabet_re=non_alphabet_re2):
     text = re.sub(' +', ' ', text).lower()
     return text
 
-def get_ngrams_df(text, n):
+def get_ngrams_frequency(text, n):
     """ Returns a table of ngrams for given n, sorted by frequency """
     ngrams = {}
     words = text.split()
@@ -117,7 +93,7 @@ def get_ngrams_df(text, n):
 def save_all(from_file, to_file, langs):
     """ Calculates frequencies for each; saves to csv """
     for lang in langs:
-        freq = get_frequency(from_file + lang + '.txt')
+        freq = get_word_frequency(from_file + lang + '.txt')
         freq.to_csv(to_file + lang + '.csv', index=False)
 
 def get_all(from_file, langs):
@@ -166,7 +142,7 @@ def compare_frequent(freq, *langs, limit=10):
 def compare_ngrams(n, texts, *langs, limit=10):
     """ Returns an UNMATCHED table of most frequent ngrams in any number of languages """
     return pd.concat(
-        [get_ngrams_df(texts[lang], n) for lang in langs]
+        [get_ngrams_frequency(texts[lang], n) for lang in langs]
     ).head(limit)
 
 def check_different_langs(lang1, lang2):
