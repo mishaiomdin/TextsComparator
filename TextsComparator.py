@@ -129,7 +129,7 @@ def get_group_texts(from_file, text_names):
             res[text_name] = file.read()
     return res
 
-def get_group_frequencies(from_file, texts):
+def get_group_frequencies(texts):
     """ Returns a dictionary for a group of texts """
     res = {}
     for text_name in texts:
