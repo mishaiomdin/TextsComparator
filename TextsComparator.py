@@ -3,10 +3,13 @@ import numpy as np
 
 from tqdm.auto import tqdm
 import re
-import collections
 
 import matplotlib.pyplot as plt
 import seaborn as sns
+
+""" TextsComparator by @MishaIomdin """
+""" v0: March 2024 (for Harry Potter course) """
+""" v1: March 2025 """
 
 # includes Latin, Cyrillic, Greek, -
 non_alphabet_re1 = r"""[^a-zA-Z\u00C0-\u024F\u0400-\u04FF\- ]"""
@@ -15,6 +18,7 @@ non_alphabet_re2 = r"""[^a-zA-Z\u00C0-\u024F\u0400-\u04FF\-\'’ ]"""
 
 
 """ WORKING WITH ONE TEXT """
+
 
 def get_text(from_file, text_name):
     with open(from_file + text_name + '.txt') as file:
@@ -57,6 +61,7 @@ def get_word_frequency_from_file(text_file, non_alphabet_re=non_alphabet_re2, lo
     df.reset_index(drop=True, inplace=True)
     return df
 
+
 def get_char_frequency(text_file, non_alphabet_re=non_alphabet_re2, lower=True):
     """ Returns table of character frequencies in a text """
     with open(text_file) as file:
@@ -74,11 +79,14 @@ def get_char_frequency(text_file, non_alphabet_re=non_alphabet_re2, lower=True):
     df.reset_index(drop=True, inplace=True)
     return df
 
+
 def text_to_words(text, to_delete=None, non_alphabet_re=non_alphabet_re2):
     return clean_text(text, to_delete=to_delete, non_alphabet_re=non_alphabet_re).split()
 
+
 def text_to_chars(text, to_delete=None, non_alphabet_re=non_alphabet_re2):
     return re.sub(non_alphabet_re, '', text)
+
 
 def clean_text(text, to_delete=None, non_alphabet_re=non_alphabet_re2):
     """ Deletes all punctuation """
@@ -92,6 +100,7 @@ def clean_text(text, to_delete=None, non_alphabet_re=non_alphabet_re2):
     text = re.sub(non_alphabet_re, '', text) # ’'- are saved
     text = re.sub(' +', ' ', text).lower()
     return text
+
 
 def get_ngrams_frequency(text, n):
     """ Returns a table of ngrams for given n, sorted by frequency """
@@ -108,11 +117,13 @@ def get_ngrams_frequency(text, n):
 
 """ WORKING WITH A GROUP OF TEXTS """
 
+
 def save_group(from_file, to_file, text_names):
     """ Calculates frequencies for each; saves to csv """
     for text_name in text_names:
         freq = get_word_frequency_from_file(from_file + text_name + '.txt')
         freq.to_csv(to_file + text_name + '.csv', index=False)
+
 
 def get_group(from_file, text_names):
     """ Returns a dictionary for all word frequencies of a group of texts """
@@ -120,6 +131,7 @@ def get_group(from_file, text_names):
     for text_name in text_names:
         res[text_name] = pd.read_csv(from_file + text_name + '.csv')
     return res
+
 
 def get_group_texts(from_file, text_names):
     """ Returns a dictionary for a group of texts """
@@ -139,14 +151,15 @@ def get_group_frequencies(texts):
 
 """ HEATMAP """
 
+
 def heatmap(df, save_to, triangle=True, black=True, labels=False, annot=True, fmt='.0f'):
     """ saves a heatmap for given df, triangle by default """
     # setting background color
     if black:
-        sns.set(rc={'axes.facecolor':'black', 'figure.facecolor':'black', 'axes.edgecolor': 'black',
+        sns.set(rc={'axes.facecolor': 'black', 'figure.facecolor': 'black', 'axes.edgecolor': 'black',
                     'xtick.color': 'white', 'ytick.color': 'white'})
     else:
-        sns.set(rc={'axes.facecolor':'white', 'figure.facecolor':'white', 'axes.edgecolor': 'white',
+        sns.set(rc={'axes.facecolor': 'white', 'figure.facecolor': 'white', 'axes.edgecolor': 'white',
                    'xtick.color': 'black', 'ytick.color': 'black'})
     if triangle:
         mask = np.array([[False] * i + [True] * (len(df) - i) for i in range(len(df))])
@@ -158,22 +171,26 @@ def heatmap(df, save_to, triangle=True, black=True, labels=False, annot=True, fm
 
 """ COMPARE SEVERAL TEXTS """
 
+
 def compare_frequent(freq, *text_names, limit=10):
-    """ Returns an UNMATCHED table of most frequent words in any number of text_nameuages """
+    """ Returns an UNMATCHED table of most frequent words in any number of text_names """
     return pd.DataFrame({
         text_name: freq[text_name]['word'] for text_name in text_names
     }).head(limit)
 
+
 def compare_ngrams(n, texts, *text_names, limit=10):
-    """ Returns an UNMATCHED table of most frequent ngrams in any number of text_nameuages """
+    """ Returns an UNMATCHED table of most frequent ngrams in any number of text_names """
     return pd.concat(
         [get_ngrams_frequency(texts[text_name], n) for text_name in text_names]
     ).head(limit)
 
+
 def check_different_text_names(text_name1, text_name2):
-    """ checks that two different text_nameuages are given """
+    """ checks that two different text_names are given """
     if text_name1 == text_name2:
-        raise Exception("Can't compare a text_nameuage with itself")
+        raise Exception("Can't compare a text_names with itself")
+
 
 def calculate_intersection(freq, text_name1, text_name2):
     """ calculates in_text_name1 and in_text_name2 if not yet; returns set of intersected words """
@@ -185,12 +202,14 @@ def calculate_intersection(freq, text_name1, text_name2):
         freq[text_name2][f'in_{text_name1}'] = freq[text_name2]['word'].apply(lambda x: x in intersection)
     return intersection
 
+
 def get_specifics(freq, text_name1, text_name2):
     """ returns words specific to text_name1, text_name2"""
     check_different_text_names(text_name1, text_name2)
     if f"in_{text_name2}" not in freq[text_name1].columns or f"in_{text_name1}" not in freq[text_name2].columns:
         calculate_intersection(freq, text_name1, text_name2)
     return freq[text_name1][~freq[text_name1][f'in_{text_name2}']].reset_index(), freq[text_name2][~freq[text_name2][f'in_{text_name1}']].reset_index()
+
 
 def get_specifics_three(freq, text_name1, text_name2, text_name3):
     """ returns words specific to text_name1, text_name2, text_name3"""
@@ -201,9 +220,19 @@ def get_specifics_three(freq, text_name1, text_name2, text_name3):
         calculate_intersection(freq, text_name1, text_name2)
         calculate_intersection(freq, text_name1, text_name3)
         calculate_intersection(freq, text_name2, text_name3)
-    return freq[text_name1][(~freq[text_name1][f'in_{text_name2}']) & (~freq[text_name1][f'in_{text_name3}'])].reset_index(),\
-    freq[text_name2][(~freq[text_name2][f'in_{text_name1}']) & (~freq[text_name2][f'in_{text_name3}'])].reset_index(),\
-    freq[text_name3][(~freq[text_name3][f'in_{text_name1}']) & (~freq[text_name3][f'in_{text_name2}'])].reset_index()
+    return \
+        freq[text_name1][(~freq[text_name1][f'in_{text_name2}'])
+                         & (~freq[text_name1][f'in_{text_name3}'])
+                         ].reset_index(), \
+        freq[text_name2][
+            (~freq[text_name2][f'in_{text_name1}'])
+            & (~freq[text_name2][f'in_{text_name3}'])
+        ].reset_index(), \
+        freq[text_name3][
+            (~freq[text_name3][f'in_{text_name1}'])
+            & (~freq[text_name3][f'in_{text_name2}'])
+        ].reset_index()
+
 
 def get_specifics_df(freq, text_name1, text_name2):
     """ returns words specific to text_name1, text_name2 in one table, NOT MATCHED"""
@@ -216,6 +245,7 @@ def get_specifics_df(freq, text_name1, text_name2):
         f'{text_name2}_count': specific2['count']
     })
     return df
+
 
 def get_specifics_df_three(freq, text_name1, text_name2, text_name3):
     """ returns words specific to text_name1, text_name2, text_name3 in one table, NOT MATCHED"""
@@ -231,6 +261,7 @@ def get_specifics_df_three(freq, text_name1, text_name2, text_name3):
     })
     return df
 
+
 def get_intersection_df(freq, text_name1, text_name2):
     """ returns table of mutual words between text_name1 and text_name2, sorted by sum of frequencies"""
     check_different_text_names(text_name1, text_name2)
@@ -241,6 +272,7 @@ def get_intersection_df(freq, text_name1, text_name2):
     return df[['word', f'count_{text_name1}', f'count_{text_name2}', 'sum_count']]
 
 """ IOU METRIC FOR VOCABULARY ON A GROUP OF text_nameUAGES """
+
 
 def get_iou(freq, text_names, round=None, percentage=False, also_intersection=False):
     """ Calculates IOU for words of given text_nameuages """
@@ -273,6 +305,7 @@ def get_iou(freq, text_names, round=None, percentage=False, also_intersection=Fa
         return df_iou, df_intersection
     return df_iou
 
+
 def iou_heatmap(freq, text_names, save_to, round=None, percentage=True, triangle=True, black=True, labels=False, annot=True, fmt='.0f'):
     """ saves and shows a heatmap for IOU, triangle by default """
     df_iou = get_iou(freq, text_names, round, percentage)
@@ -280,6 +313,7 @@ def iou_heatmap(freq, text_names, save_to, round=None, percentage=True, triangle
 
 
 """ NGRAMS """
+
 
 def longest_ngrams_text(text1, text2, with_tqdm=True, upto=1000):
     """ Returns a list of longest common ngrams between two texts, punctuation is ignored """
@@ -308,10 +342,12 @@ def longest_ngrams_text(text1, text2, with_tqdm=True, upto=1000):
             return list(last_ngrams)
     return list(last_ngrams)
 
+
 def longest_ngrams(from_file, text_name1, text_name2, with_tqdm=True):
     text1 = get_text(from_file, text_name1)
     text2 = get_text(from_file, text_name2)
     return longest_ngrams_text(text1=text1, text2=text2, with_tqdm=with_tqdm)
+
 
 def one_longest_ngram_text(text1, text2, with_tqdm=True):
     """ Returns one of the longest ngrams between two texts, punctuation is ignored """
@@ -320,14 +356,17 @@ def one_longest_ngram_text(text1, text2, with_tqdm=True):
         return res[0]
     return ''
 
+
 def one_longest_ngram(from_file, text_name1, text_name2, with_tqdm=True):
     text1 = get_text(from_file, text_name1)
     text2 = get_text(from_file, text_name2)
     return one_longest_ngram_text(text1=text1, text2=text2, with_tqdm=with_tqdm)
 
+
 def words_count(phrase):
     """ Counts words in a phrase """
     return len(phrase.split())
+
 
 def longest_ngram_table(from_file, text_names, all=True, for_same='', also_length=False):
     """ if all=True, each cell is a list of ngrams or []; otherwise one or '' """
@@ -346,7 +385,6 @@ def longest_ngram_table(from_file, text_names, all=True, for_same='', also_lengt
             else:
                 ngrams = one_longest_ngram(from_file, text_name1, text_name2, with_tqdm=False)
             longest_ngram[text_name1][text_name2] = ngrams
-            
             # other way around
             longest_ngram[text_name2][text_name1] = ngrams
     df_ngrams = pd.DataFrame(longest_ngram)
@@ -358,6 +396,3 @@ def longest_ngram_table(from_file, text_names, all=True, for_same='', also_lengt
         return df_ngrams, df_length
     else:
         return df_ngrams
-
-
-
